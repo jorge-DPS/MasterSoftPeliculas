@@ -1,80 +1,111 @@
-<script setup>
-</script>
-
 <template>
-  <main>
-    <div class="container">
-      <h1 class="mb-4">Buscador de Películas</h1>
-      <div class="input-group mb-3">
-        <input v-model="searchTerm" type="text" class="form-control" placeholder="Buscar por título">
-        <button @click="searchMovies" class="btn btn-outline-primary">Buscar</button>
-      </div>
+  <div class="container">
+    <h1 class="mb-4 text-center">Buscar Peliculas</h1>
 
-      <ul v-if="movies.length" class="list-group">
-        <li v-for="movie in movies" @click="showMovieDetails(movie.imdbID)" class="list-group-item pointer">{{ movie.Title
-        }}</li>
-      </ul>
+    <div class="input-group mb-3">
+      <input v-model="searchQuery" type="text" class="form-control" placeholder="Buscar por título">
+      <button @click="searchOnButtonClick" class="btn btn-outline-primary">Buscar</button>
+    </div>
 
-      <div v-if="selectedMovie" class="container mt-4">
-        <h2>{{ selectedMovie.Title }}</h2>
-        <p><strong>Año:</strong> {{ selectedMovie.Year }}</p>
-        <p><strong>Director:</strong> {{ selectedMovie.Director }}</p>
-        <p><strong>Reparto:</strong> {{ selectedMovie.Actors }}</p>
-        <button @click="setObject(selectedMovie)" class="btn btn-outline-primary">Agregar a Favoritos</button>
+    <ul v-if="movies.length > 0" class="list-group">
+      <li v-for="movie in movies" :key="movie.imdbID" @click="showMovieDetails(movie.imdbID)"
+        class="list-group-item cursor-pointer">
+        {{ movie.Title }} ({{ movie.Year }})
+      </li>
+    </ul>
+
+    <div class="d-flex justify-content-center">
+      <div v-if="selectedMovie" class="mt-4">
+        <div class="card" style="width: 30rem;">
+          <img :src="selectedMovie.Poster" :alt="selectedMovie.Title" class="card-img-top">
+          <div class="card-body">
+            <h5 class="card-title">{{ selectedMovie.Title }} ({{ selectedMovie.Year }})</h5>
+            <p class="card-text">{{ selectedMovie.Plot }}</p>
+            <p><strong>Director:</strong> {{ selectedMovie.Director }}</p>
+            <p><strong>Cast:</strong> {{ selectedMovie.Actors }}</p>
+            <button @click="addToFavorites" class="btn btn-primary align-items-center">Añadir a Favoritos</button>
+          </div>
+        </div>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script>
-
-import { useDataStore } from '@/stores/favoritos';
+import { ref, watch, onMounted } from 'vue';
+import { useFavoritesStore } from '@/stores/favoritos';
 
 export default {
-  data() {
-    return {
-      searchTerm: '',
-      movies: [],
-      selectedMovie: null,
-    };
-  },
-  methods: {
-    setObject(peliculaSelecioanda) {
-      console.log(peliculaSelecioanda.Title);
-      const dataStore = useDataStore();
-      dataStore.setMyObject({ name: 'Ejemplo', age: 25 });
-    },
-    searchMovies() {
-      if (this.searchTerm.trim() !== '') {
-        const apiUrl = `http://www.omdbapi.com/?apikey=b49f35af&s=${this.searchTerm}`;
+  setup() {
+    const searchQuery = ref('');
+    const movies = ref([]);
+    const selectedMovie = ref(null);
+    const favoritesStore = useFavoritesStore();
 
-        this.$axios.get(apiUrl)
-          .then(response => {
-            this.movies = response.data.Search || [];
-            this.selectedMovie = null;
-          })
-          .catch(error => {
-            console.error('Error fetching movies:', error);
-          });
+    const searchMovies = () => {
+      if (searchQuery.value === '') {
+        movies.value = [];
+        return;
       }
-    },
-    showMovieDetails(imdbID) {
-      const apiUrl = `http://www.omdbapi.com/?apikey=b49f35af&i=${imdbID}`;
 
-      this.$axios.get(apiUrl)
-        .then(response => {
-          this.selectedMovie = response.data;
+      const apiKey = 'b49f35af';
+      const apiUrl = `http://www.omdbapi.com/?apikey=${apiKey}&s=${searchQuery.value}`;
+
+      fetch(apiUrl)
+        .then((response) => response.json())
+        .then((data) => {
+          movies.value = data.Search || [];
         })
-        .catch(error => {
+        .catch((error) => {
+          console.error('Error fetching data:', error);
+        });
+    };
+
+    const showMovieDetails = (imdbID) => {
+      const apiKey = 'b49f35af';
+      const apiUrl = `http://www.omdbapi.com/?apikey=${apiKey}&i=${imdbID}`;
+
+      fetch(apiUrl)
+        .then((response) => response.json())
+        .then((data) => {
+          selectedMovie.value = data;
+        })
+        .catch((error) => {
           console.error('Error fetching movie details:', error);
         });
-    },
-    // addToFavorites() {
-    //   if (this.selectedMovie) {
-    //     this.$store.commit('addToFavorites', this.selectedMovie);
-    //   }
-    // },
+    };
 
-  }
-}
+    const addToFavorites = () => {
+      if (selectedMovie.value) {
+        favoritesStore.addToFavorites(selectedMovie.value);
+        alert('Pelicula Añadida a los favoritos!');
+      }
+    };
+
+    const searchOnButtonClick = () => {
+      searchMovies();
+    };
+
+    watch(searchQuery, searchMovies);
+
+    onMounted(() => {
+      favoritesStore.loadFavorites();
+    });
+
+    return {
+      searchQuery,
+      movies,
+      selectedMovie,
+      addToFavorites,
+      showMovieDetails,
+      searchOnButtonClick,
+    };
+  },
+};
 </script>
+
+<style>
+.cursor-pointer {
+  cursor: pointer;
+}
+</style>
