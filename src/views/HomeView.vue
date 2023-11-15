@@ -48,6 +48,7 @@ export default {
         return;
       }
 
+      // cambiar api key
       const apiKey = 'b49f35af';
       const apiUrl = `http://www.omdbapi.com/?apikey=${apiKey}&s=${searchQuery.value}`;
 
@@ -62,6 +63,7 @@ export default {
     };
 
     const showMovieDetails = (imdbID) => {
+      // cambiar api key
       const apiKey = 'b49f35af';
       const apiUrl = `http://www.omdbapi.com/?apikey=${apiKey}&i=${imdbID}`;
 

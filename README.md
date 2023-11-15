@@ -27,3 +27,7 @@ npm run dev
 ```sh
 npm run build
 ```
+
+### Cambiar la APIKEY por; por su APIKEY
+
+### const apiKey = 'TU_API_KEY';
